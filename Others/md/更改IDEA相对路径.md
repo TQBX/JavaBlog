@@ -1,21 +1,19 @@
 # 更改IDEA相对路径
 
-
-
 IDEA的默认工作目录在当前的项目下，我们可以通过`Run`->`Edit Configurations..`查看。
 
-![1tiS0S.png](https://s2.ax1x.com/2020/02/02/1tiS0S.png)
+[![1tiS0S.png](https://camo.githubusercontent.com/2bae0710eb9fd7a1cca1172059e0ba7aaa8dcb12/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174695330532e706e67)](https://camo.githubusercontent.com/2bae0710eb9fd7a1cca1172059e0ba7aaa8dcb12/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174695330532e706e67)
 
 可以看到我当前java文件的工作目录，是：`E:\java_learning\project01`。
 
-![1tPzm8.png](https://s2.ax1x.com/2020/02/02/1tPzm8.png)
+[![1tPzm8.png](https://camo.githubusercontent.com/ba73e3a49714aadecbdd0e989fa4dac5d6419097/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174507a6d382e706e67)](https://camo.githubusercontent.com/ba73e3a49714aadecbdd0e989fa4dac5d6419097/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174507a6d382e706e67)
 
 可以通过右边`...`浏览并修改目录。
 
-![1tPvOf.png](https://s2.ax1x.com/2020/02/02/1tPvOf.png)
+[![1tPvOf.png](https://camo.githubusercontent.com/84d86a79c420f516e6ac8f269c3f9396fc61aa29/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f317450764f662e706e67)](https://camo.githubusercontent.com/84d86a79c420f516e6ac8f269c3f9396fc61aa29/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f317450764f662e706e67)
 
 只是修改指定的java文件，可以通过左边列表选择。
 
-![1tiB9A.png](https://s2.ax1x.com/2020/02/02/1tiB9A.png)
+[![1tiB9A.png](https://camo.githubusercontent.com/577304fc2440fc749ed76a7be95d2c1989a968a9/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174694239412e706e67)](https://camo.githubusercontent.com/577304fc2440fc749ed76a7be95d2c1989a968a9/68747470733a2f2f73322e617831782e636f6d2f323032302f30322f30322f3174694239412e706e67)
 
 有时候在测试demo的时候可以小作修改，会方便一些。
