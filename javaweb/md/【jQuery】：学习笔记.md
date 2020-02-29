@@ -23,3 +23,7 @@ var div1 = $("div").get(0);//jquery对象-->js对象
 <div id="test" class="test"></div>
 ```
 
+
+
+
+
