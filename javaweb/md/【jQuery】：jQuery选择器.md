@@ -4,7 +4,7 @@
 
 > write less , do more .
 
-轻量级的JavaScript函数库，在使用时需要引入jQuery库文件。引用方式如下，两种都可。
+jQuery是轻量级的JavaScript函数库，在使用时需要引入jQuery库文件。引用方式如下，两种都可。
 
 ```js
 <script src="../jquery-1.4.2.min.js"></script>	 <!--生产版-->
@@ -142,7 +142,7 @@ $("input:checked") 	//匹配所有的被选中的单选框/复选框
 
 
 
-## 10、表单选择器
+## 9、表单选择器
 
 ```js
 $(":input") 		//匹配所有的input文本框、密码框、单选框、复选框、select框、textarea、button。
