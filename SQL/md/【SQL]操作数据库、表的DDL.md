@@ -73,8 +73,10 @@ create table student (
 
 ### 文本相关
 
-- varchar(m)：可变长度字符串 ，使用几个字符就占用几个，m为0-65535之间。
-- char(m)：定长字符串，无论使用几个字符都将占满全部，m为0-255之间。
+- varchar(m)：可变长度字符串 ，**使用几个字符就占用几个**，m为0-65535之间。
+- char(m)：定长字符串，**无论使用几个字符都将占满全部**，多余的以空字符补充，m为0-255之间。
+
+> 关于char和varchar推荐看这篇：[char与varchar类型区别的深度剖析](https://blog.csdn.net/lovemysea/article/details/82315514)
 
 ### 数相关
 
