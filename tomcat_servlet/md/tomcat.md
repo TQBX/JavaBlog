@@ -1,14 +1,16 @@
+[toc]
+
 # 什么是Tomcat
 
-Tomcat简单的说就是一个运行JAVA的网络服务器软件，它支持全部jsp和servlet规范，可以用以部署web项目。
+Tomcat是一个网络服务器软件，它支持全部jsp和servlet规范，可以用以部署web项目。
 
-而安装了服务器软件的计算机，就是服务器。
+安装了服务器软件的计算机，就是服务器。
 
 # 安装注意点
 
 安装目录不要包含中文和空格。（养成好习惯）
 
-配置环境变量JAVA_HOME到Tomcat运行需要的jdk。
+配置环境变量`JAVA_HOME`到Tomcat运行需要的jdk。
 
 ![image-20200313203840952](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200313203840952.png)
 
@@ -18,26 +20,27 @@ Tomcat简单的说就是一个运行JAVA的网络服务器软件，它支持全�
 
 上述操作之后，出现黑窗口，然后打开浏览器，输入`http://localhost:8080/`，就可以看见可爱的Tomcat了。
 
-如果要正常关闭的话：可以进入bin目录下双击shutdown.bat，也可以在黑窗口按ctrl+c。
+如果要正常关闭的话：可以进入bin目录下双击`shutdown.bat`，也可以在黑窗口按`ctrl+c`。
 
 非正常关闭，就直接叉掉黑窗口。
 
 ##  过程中可能出现的问题
 
-- 没有正确导致环境变量JAVA_HOME导致黑窗口一闪而过，正确配置环境变量即可。
+- 没有正确导致环境变量`JAVA_HOME`导致黑窗口一闪而过，正确配置环境变量即可。
 
 - 8080端口号被占用导致启动失败，有两种解决办法：
 
   - cmd打开，找到正在占用8080端口号的进程，在任务管理器里关掉它。
 
-  - 修改Tomcat目录下的conf/server.xml中，找到下面这段，把修改端口号。
+  - 修改Tomcat目录下的`conf/server.xml`中，找到下面这段，把修改端口号。
 
     ```xml
     <Connector port="8080" protocol="HTTP/1.1"
                connectionTimeout="20000"
                redirectPort="8443" />
     ```
-    
+
+- 一般来说，习惯将端口改为80，即` port="80"`,因为80端口号是http协议的默认端口号，设置之后就不需要输入端口了。
 
 # Tomcat结构目录
 
@@ -69,7 +72,21 @@ work：Tomcat工作目录，用于存放jsp、servlet编译后生成的`.java`�
 
 在网址栏输入：`http://localhost:8080/web/hello.html`即可访问资源。
 
-/web：项目的访问路径，虚拟目录。
+### URL组成部分
+
+http：协议
+
+localhost：主机（域名）
+
+8080：端口号
+
+web：当前web应用
+
+hello.html：资源
+
+web/hello.html：URI统一资源标识符
+
+http://localhost:8080/web/hello.html：统一资源定位符，是URI的子集
 
 /hello.html：资源名称。
 
@@ -141,3 +158,51 @@ ps：server.xml是Tomcat的核心配置，一般不建议在里面进行配置�
 
 这三种方式中，方式1和方式3支持热部署，即在不重启Tomcat的情况下，使应用的最新代码生效。
 
+# Web应用目录结构
+
+![](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200313232030244.png)
+
+# 配置缺省主页
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                      http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+  version="3.1">
+
+      <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
+```
+
+`<welcome-file-list>`标签中的页面将作为缺省页面，则在地址栏中就不需要写页面名称就可以直接访问，可参照Tomcat的首页。
+
+如果我们想设置主页是我们自己的页面，我们需要将`<welcome-file>index.html</welcome-file>`标签内的内容改为自己的，比如`<welcome-file>hello.html</welcome-file>`，注意代码执行自上而下，如果有两个主页文件，那么第一个会生效。
+
+这样，我们在访问的时候，就不要指定资源名称了。
+
+# 配置虚拟主机
+
+一、在tomcat中`D:\apache-tomcat-8.5.31\conf`下的server.xml，增添以下信息。
+
+![host](E:\1myblog\JavaBlog\JavaBlog\tomcat_servlet\pic\host.png)
+
+二、重启tomcat后，自动生成summerday目录。
+
+![summerday](E:\1myblog\JavaBlog\JavaBlog\tomcat_servlet\pic\summerday.png)
+
+三、`C:\Windows\System32\drivers\etc`目录下找到hosts文件，在文件的最后一行添加`127.0.0.1 www.summerday.com`。
+
+四、浏览器输入`http://www.summerday.com:8080/tqbx/hello.html`，即可访问资源。
+
+# 浏览器访问Web资源流程图
+
+![image-20200314125422732](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200314125422732.png)
+
+参考：[Tomcat就是这么简单](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247484755&idx=2&sn=b09e747bd0af5e1899a47911f92d1afe&chksm=ebd74452dca0cd44ebbcdacab7373a72d0c769746eaa2bfa454d1dbc8295e3f93b0645c0ac58###rd)
