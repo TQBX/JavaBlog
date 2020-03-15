@@ -1,22 +1,18 @@
 # 什么是Servlet
 
+---
+
+“**Servlet** 是运行在**Web服务器**的Java小程序。Servlet可以获取并针对Web客户端的**请求作出响应**。一般情况下，通过**HTTP**，即超文本传输协议，进行传输通信。”
+
+```
+A servlet is a small Java program that runs within a Web server. Servlets receive and respond to requests from Web clients, usually across HTTP, the HyperText Transfer Protocol.
+```
+
+参考自：[Servlet必会必知](https://my.oschina.net/jeffli1993/blog/495336)
+
 Servlet是Sun公司提供的动态资源开发的技术，其本质是一个java文件，也就是说需要编译运行的过程。
 
 与普通的java文件不同的是，需要将编译后的.class文件放入Servlet容器之中，而tomcat就为之提供了存储并运行servlet的环境。
-
-
-
-servlet容器：存储并运行servlet的环境。
-
-web容器：存储并运行web资源的环境。
-
-
-
-# Servlet的作用
-
-**处理浏览器带来HTTP请求，并返回一个响应给浏览器，从而实现浏览器和服务器的交互**。
-
-
 
 # IDEA编写Servlet
 
@@ -64,5 +60,70 @@ web容器：存储并运行web资源的环境。
 
 ![image-20200314172841063](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200314172841063.png)
 
-# Servlet细节补充
+## 方式二
+
+在创建项目的时候选择不勾选Create web.xml，利用注解的方式配置路径映射。
+
+![version](E:\1myblog\JavaBlog\JavaBlog\tomcat_servlet\pic\version.png)
+
+创建之后，会发现web目录中没有了web.xml，创建一个servlet，会发现类的左上方出现了注解，`@WebServlet(name = "SecondServlet")`,但是我们需要的是urlPatterns，我们需要改成如下模样：
+
+![image-20200315192917295](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200315192917295.png)
+
+原理还是和方式一样的，只不过注解的存在，不需要再一一地在web.xml中配置servlet-mapping了。
+
+![image-20200315193218183](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200315193218183.png)
+
+# Servlet接口方法及生命周期
+
+```java
+public interface Servlet {
+    //在Servlet被创建时执行，且一个Servlet在内存中只有一个对象（单例）
+    void init(ServletConfig var1) throws ServletException;
+	//配置对象
+    ServletConfig getServletConfig();
+	//提供服务的方法，每一次Servlet被访问时执行，执行多次
+    void service(ServletRequest var1, ServletResponse var2) throws ServletException, IOException;
+	//获取Servlet的一些信息，版本，作者等等
+    String getServletInfo();
+	//在服务器正常关闭时执行，执行一次。
+    void destroy();
+}
+```
+
+Web服务器收到客户端的Servlet访问请求之后，调用Servlet程序。
+
+>  Servlet是一个供其他Java程序（Servlet引擎）调用的Java类，它不能独立运行，它的运行完全由Servlet引擎来控制和调度。
+
+【加载】Servlet第一次被访问的时候，将会创建出一个Servlet对象。创建出来的对象会一直保存在内存中，以便之后重复访问创建的Servlet。
+
+【初始化】在创建Servlet对象之后立刻调用`init()`方法进行初始化操作。
+
+【处理服务】每次对Servlet的访问都会调用Servlet的`service()`方法。
+
+【销毁】在web应用被移除容器或者服务器关闭时，将会调用Servlet的`destroy()`方法，servlet对象随之销毁。
+
+# Servlet继承结构
+
+Servlet：定义了servlet都具有的方法，所有的Servlet都需要直接或间接实现这个接口。
+
+GenericServlet：抽象类，对Servlet接口的大部分方法提供了实现，只有service()方法需要下一个勇士去定义。
+
+HttpServlet：继承了GenericServlet类，是一个对HTTP协议进行了优化的Servlet，查看源码，可以发现它实现了service抽象方法，将request和response对象转化成HttpServletRequest和HttpServletResponse对象，并调用`protected void service(HttpServletRequest req, HttpServletResponse resp)`方法。该方法根据请求方式的不同，分别调用doXxx方法。
+
+![image-20200315201045396](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200315201045396.png)
+
+doXxx方法，主要用的还是DoGet()和DoPost()方法。
+
+![do](E:\1myblog\JavaBlog\JavaBlog\tomcat_servlet\pic\do.png)
+
+通常使用的HttpServlet比较多，包括IDEA自动创建Servlet的默认模板就是它。
+
+> “HttpServlet 提供了一个能被继承后创建一个适应Web网站的**Http Servlet**的抽象类。”
+
+# Servlet的线程安全问题
+
+针对客户端的多次Servlet请求，通常情况下，服务器**只会创建一个Servlet实例对象**，也就是说Servlet实例对象一旦创建，它就会驻留在内存中，为后续的其它请求服务，直至web容器退出，servlet实例对象才会销毁。
+
+当多个客户端并发访问同一个Servlet时，Web服务器会为每一个客户端的访问请求创建一个线程，并在这个线程上调用Servlet的service()方法，**如果service()方法内如果访问了统一资源，将会造成线程安全问题**。
 
