@@ -1,3 +1,5 @@
+# Request和Response生成过程
+
 回顾一下Servlet的调用过程，我们创建一个MyServlet类，并且定义了相关方法处理最初来自客户端浏览器的http请求，在方法中将"hello"写入response中，代码如下：
 
 ```java
@@ -23,25 +25,23 @@ public class MyServlet extends HttpServlet {
 
 这张图网上有，因为字体太小了，我就想把里面的字画大个一些，并结合这个例子分析一下。
 
-我们之前分析过：服务器生成req和res对象，调用HttpServlet的service方法时，将会转化成HttpServletRequest和HttpServletResponse对象，处理数据之后，response对象返回给服务器，服务器将response对象作为响应返回给浏览器。
+我们之前分析过：服务器生成req和res对象，**调用HttpServlet的service方法时，将会转化成HttpServletRequest和HttpServletResponse对象**，处理数据之后，response对象返回给服务器，服务器将response对象作为响应返回给浏览器。
 
 ---
 
-因此，request和response是啥，也就一目了然了，一个代表请求，一个代表响应，他们与HTTP协议都有着密不可分的协议。当然这两个对象也会有相关的方法，去设置响应的内容，或者获取请求的内容。
+因此，request和response是啥，也就一目了然了，**一个代表请求，一个代表响应**，他们与HTTP协议都有着密不可分的协议。当然这两个对象也会有相关的方法，去设置响应的内容，或者获取请求的内容。
 
-# request
-
-## 继承结构
+# 继承结构
 
 ServletRequest：request顶级接口，定义了request应该具有的基本方法。
 
-HttpServletRequest：继承于ServletRequest的接口，增加了关于http协议相关的API。
+HttpServletRequest：继承于ServletRequest的接口，**增加了关于http协议相关的API**。
 
-## 常用方法
+# 常用方法
 
 浏览器输入：`http://localhost/demo/requestDemo1?username=summerday&gender=male`
 
-### 一、和客户端相关的信息
+## 一、和客户端相关的信息
 
 ```java
 /**
@@ -74,7 +74,7 @@ public class RequestDemo1 extends HttpServlet {
 
         //获取当前web应用虚拟目录的名称：/demo
         String contextPath = request.getContextPath();
-        System.out.println("虚拟目录："+contextPath);
+        System.out.println("虚拟目录："+contextPath);//画个重点！
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -83,7 +83,7 @@ public class RequestDemo1 extends HttpServlet {
 }
 ```
 
-### 二、获取请求头信息
+## 二、获取请求头信息
 
 ```java
 /**
@@ -118,13 +118,51 @@ public class RequestDemo2 extends HttpServlet {
 }
 ```
 
-### 三、获取请求参数
+## 三、获取请求参数
+
+```java
+/**
+ * @auther Summerday
+ *
+ * 获取请求参数
+ */
+@WebServlet("/RequestDemo3")
+public class RequestDemo3 extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //设置POST方式提交解码方式
+        request.setCharacterEncoding("utf-8");
+
+        //获取参数名为"username"的值
+        String username = request.getParameter("username");
+        String nickname = request.getParameter("nickname");
+        System.out.println("username:"+username+", nickname:"+nickname);
+
+        //获取名为hobby的多个值(多选框的应用，一个name，多个value）
+        String[] hobbies = request.getParameterValues("hobby");
+        System.out.println(Arrays.toString(hobbies));
+
+        //获取全部请求参数的名称
+        Enumeration<String> parameterNames = request.getParameterNames();
+        while(parameterNames.hasMoreElements()){
+            String s = parameterNames.nextElement();
+            System.out.println("names:"+s);
+        }
+
+        //将全部参数名及参数值传入map  String name:String[] values
+        Map<String, String[]> map = request.getParameterMap();
+        for (Map.Entry<String, String[]> entry : map.entrySet()) {
+            System.out.println(entry.getKey()+":"+ Arrays.toString(entry.getValue()));
+        }
+        }
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPost(request,response);
+    }
+}
+```
+
+可以发现，这些获取请求参数的方法，离不开form表单中各项的name属性。
 
 
-
-
-
-
-
-# response
 
