@@ -29,3 +29,18 @@
 ![clone](E:\1myblog\JavaBlog\JavaBlog\Others\pic\clone.png)
 
 即可。
+
+# 出现问题push to origin/master was rejected
+
+- 进入项目所在目录，git bash here
+
+- 依次输入：
+
+  ```git
+  git pull
+  git pull origin master
+  git pull origin master --allow-unrelated-histories
+  ```
+
+- 重新push即可。
+
