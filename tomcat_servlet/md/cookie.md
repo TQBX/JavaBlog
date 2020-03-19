@@ -34,6 +34,8 @@ Cookie技术通过在请求和响应报文中写入Cookie信息来控制客户�
 
 ![image-20200319220318999](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200319220318999.png)
 
+
+
 # Cookie相关的首部字段
 
 Set-Cookie：是开始状态管理所使用的响应首部字段。
@@ -85,7 +87,7 @@ response.addCookie(cookie);
 cookie.setMaxAge(60*60*24);
 ```
 
-与expires属性相关，如果不设置最大生命时长，则**默认到浏览器关闭为止**。
+如果不设置最大生命时长，则**默认到浏览器关闭为止**。
 
 - 如果值为正数，则浏览器将会对Cookie持久化，时间取决于值的秒数，时间到后自动清除cookie文件。
 - 值为0，表示立即删除cookie。
@@ -94,6 +96,7 @@ cookie.setMaxAge(60*60*24);
 ## 4、设置有效路径
 
 ```java
+//将有效路径设置为web应用的虚拟路径
 cookie.setPath(request.getContextPath()+"/");
 ```
 
@@ -125,3 +128,27 @@ response.addCookie(cookie);
 
 需要注意的是：一旦服务器将cookie发送到客户端，就没有显式删除cookie的办法。但是可以通过覆盖cookie实现实质性的删除操作：即服务器创建一个MaxAge为0，且除了value之外，其他都必须相同cookie，发往客户端。
 
+> 但凡有一点不满足，都会创建一个新的同名Cookie，而不是删除原来的。
+
+
+
+# domain与path
+
+domain：规定哪些域名需要附带Cookie。
+
+- 不指定domain默认为当前域名，此时子域名就不会附带Cookie。
+- 如果setDomain(".mamll.com")，此时，该一级域名相同的资源都会附带Cookie。
+
+path：指定哪些路径需要附带Cookie。
+
+- 如果不指定，默认为只有当前资源的映射路径下有效。
+
+- 如果指定path，则指定路径及其级别下都要附带Cookie。因此，我们可以将有效路径设置为web应用的虚拟路径：`cookie.setPath(request.getContextPath()+"/");`，这样web应用所有资源都会附带Cookie。
+
+# Cookie技术的用途
+
+保存个性化信息：用户的偏好，网页的背景图等。
+
+对话管理：保存登录、购物车等信息。
+
+追踪用户：记录和分析用户的行为。
