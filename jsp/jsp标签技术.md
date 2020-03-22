@@ -121,7 +121,7 @@ ${empty listx}
 
 #  jstl标签技术
 
-JavaServerPages Standard Tag Library
+`JavaServerPages Standard Tag Library`
 
 可以和 EL 配合来取代传统直接在页面上嵌入 Java 程序（Scripting）的做法，以提高程序可读性、维护性和方便性。
 
@@ -135,9 +135,7 @@ JavaServerPages Standard Tag Library
 
 # jstl常用标签
 
-## set
-
-【设置+修改】
+## set【设置+修改】
 
 ```jsp
         <c:set var="name" value="天乔巴夏" scope="request"></c:set>
@@ -147,9 +145,69 @@ JavaServerPages Standard Tag Library
 
 ```
 
-天乔巴夏 summerday
+## remove【移除】
 
-【map】
+```jsp
+        <c:set var="num" scope="session" value="${10}"/>
+        <p>num: <c:out value="${num}"/></p>
+        <c:remove var="num"/>
+        <p>删除num后: <c:out value="${num}"/></p>
+```
 
+## if【判断】
 
+```jsp
+        <c:set var="age" value="18" scope="request"></c:set>
+        <c:if test="${age==18}" var="flag">
+            yes
+        </c:if>
+        <c:if test="${age!=18}">
+            no
+        </c:if>
+        ${flag}  <%--true--%>
+```
+
+## catch【捕获异常】
+
+```jsp
+        <c:catch var="e">
+            <%
+                int i = 1/0;
+            %>
+        </c:catch>
+        ${e}<%--java.lang.ArithmeticException: / by zero--%>
+```
+
+## choose【多条件判断】
+
+```jsp
+        <c:set var="num" value="18" scope="request" ></c:set>
+        <c:choose>
+            <c:when test="${num<10}">num<10</c:when>
+            <c:when test="${num<20}">num<20,num>=10</c:when>
+            <c:otherwise>num>=20</c:otherwise>
+        </c:choose>
+```
+
+## forTokens【切割】
+
+```jsp
+        <c:forTokens items="www.baidu.com" delims="." var="domains">
+        <c:out value="${domains}"/><p>
+        </c:forTokens>
+```
+
+## forEach【遍历】
+
+```jsp
+	<%--varStatus存储属性,count属性从1开始计数--%>    
+	<c:forEach begin="1" end="10" step="1" var="i" varStatus="stat">
+    <c:if test="${stat.count % 2 == 0 }">
+        <font color="red">${i }</font>
+    </c:if>
+    <c:if test="${stat.count % 2 != 0 }">
+        <font color="blue">${i }</font>
+    </c:if>
+    </c:forEach>
+```
 
