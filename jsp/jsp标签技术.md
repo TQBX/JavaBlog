@@ -73,12 +73,10 @@ ${map.gender }
 
 ```jsp
 <%
-Person p = new Person("zs",19,"bj");
+Person p = new Person("summerday",19);
 pageContext.setAttribute("p", p);
 %>
-${p.namex }
-${p.age }
-${p.addr }
+${p.name }
 ${p["age"] }
 ```
 
@@ -88,21 +86,21 @@ ${p["age"] }
 
 【Empty运算】
 
+- 如果对象为null，字符串为空
+- 集合没有任何元素返回true
+
 ```jsp
 <%
-<hr><h1>EL执行运算 - empty运算</h1>
-<h1>Empty运算规则：如果对象为null 字符串为空 集合数组没有任
-何元素 empty操作都会返回true，否则false</h1>
-String country = "China";
-pageContext.setAttribute("country", country);
-String province = "";
-pageContext.setAttribute("province",province);
-List<String> listx = new ArrayList<String>();
-pageContext.setAttribute("listx",listx);
+String name = "summerday";
+pageContext.setAttribute("name", name);
+String addr = "";
+pageContext.setAttribute("addr",addr);
+List<String> list = new ArrayList<String>();
+pageContext.setAttribute("list",list);
 %>
-${empty country}
-${empty province}
-${empty listx}
+${empty name}<%--false--%>
+${empty addr}<%--true--%>
+${empty list}<%--true--%>
 ```
 
 # 内置对象
