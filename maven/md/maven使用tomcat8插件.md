@@ -1,3 +1,5 @@
+我们原因配置的阿里云镜像中没有这个jar包，在pom.xml中增加插件仓库即可。
+
 ```xml
 <!--tomcat插件仓库-->  
 <pluginRepositories>
