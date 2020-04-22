@@ -1,9 +1,28 @@
 [toc]
 
-# 一、配置前端控制器
+# 一、导入相关jar包
 
 ```xml
-<!-- 在web.xml中配置前端控制器 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+```
+
+# 二、配置前端控制器
+
+```xml
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
                       http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
@@ -31,48 +50,16 @@
             <param-value>classpath:springmvc.xml</param-value>
         </init-param>
     </servlet>
+
     <servlet-mapping>
         <servlet-name>dispatcherServlet</servlet-name>
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 </web-app>
+
 ```
 
-# 二、自定义拦截器
-
-```java
-/**
- * 自定义拦截器
- * @author Summerday
- */
-public class MyInterceptor implements HandlerInterceptor {
-
-    /**
-     * 预处理,controller方法执行前
-     *
-     * @param request
-     * @param response
-     * @param handler
-     * @return true:放行,执行下一个拦截器,如果没有,执行controller中的方法 false:不放行
-     * @throws Exception
-     */
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        System.out.println("preHandle执行...");
-        return true;
-    }
-
-    @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-    }
-
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-    }
-}
-```
-
-# 三、类路径下的配置文件springmvc.xml
+# 三、配置springmvc.xml
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -96,71 +83,88 @@ public class MyInterceptor implements HandlerInterceptor {
     </bean>
     <!-- 开启SpringMVC框架注解的支持 -->
     <mvc:annotation-driven/>
-    <!--配置拦截器-->
-    <mvc:interceptors>
-        <!--配置拦截器-->
-        <mvc:interceptor>
-            <!--要拦截的具体方法-->
-            <mvc:mapping path="/user/*"/>
-            <!--不拦截的方法-->
-            <!--<mvc:exclude-mapping path=""/>-->
-            <!--配置拦截器对象-->
-            <bean class="com.smday.interceptor.MyInterceptor"></bean>
-        </mvc:interceptor>
-    </mvc:interceptors>
     <!--放行静态资源-->
     <mvc:default-servlet-handler></mvc:default-servlet-handler>
 </beans>
 ```
 
-# 四、定义Controller
+# 四、前端发送ajax请求
+
+```js
+$.ajax({
+    type: "POST",
+    contentType: "application/json;charset=UTF-8",
+    url: "user/testAjax",
+    data: '{"username":"hyh","password":"123","age":18}',
+    dataType: 'json',
+    success: function(result) {
+        alert(result);
+    }
+});
+```
+
+# 五、定义POJO实体类
 
 ```java
 /**
  * @author Summerday
  */
+public class User implements Serializable {
 
-@Controller
-@RequestMapping("/user")
-public class UserController {
-    @RequestMapping("/testInterceptor")
-    public String testInterceptor(){
-        System.out.println("controller执行...");
-        return "success";
+    private String username;
+    private String password;
+    private Integer age;
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("\"username\":\"")
+                .append(username).append('\"');
+        sb.append(",\"password\":\"")
+                .append(password).append('\"');
+        sb.append(",\"age\":")
+                .append(age);
+        sb.append('}');
+        return sb.toString();
     }
 }
 ```
 
-# 五、定义成功跳转的页面
-
->  /WEB-INF/pages/success.jsp
-
-```jsp
-<%--
-  Date: 2020/4/22
-  Time: 11:50
---%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
-    <head>
-        <title>Title</title>
-    </head>
-    <body>
-        success!
-        <% System.out.println("success.jsp执行... ");%>
-    </body>
-</html>
-```
-
-# 六、前端超链接测试
+# 六、定义Controller
 
 ```java
- <a href="${pageContext.request.contextPath}/user/testInterceptor">拦截器</a>
+@Controller
+@RequestMapping("/user")
+public class UserController {
+    @RequestMapping(value = "/testAjax",method = RequestMethod.POST)
+    public @ResponseBody User testAjax(@RequestBody User user){
+        System.out.println(user);
+        return user;
+    }
+}
 ```
-
-点击超链接，控制台输出：
-
-![image-20200422210615703](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200422210615703.png)
-
-
 
