@@ -112,7 +112,11 @@
 
 # 四、选择启动方式
 
-启动方式有很多种，如插件形式，xml形式，java形式都是可以的，当然这里使用java代码的方式，代码的话官方文档直接copy就完事了。
+
+
+启动方式有很多种，如插件形式，xml形式，java形式都是可以的，当然这里使用java代码和maven插件两种方式，代码的话官方文档直接copy就完事了。
+
+## 1、java代码启动
 
 ```java
     @Test
@@ -127,6 +131,34 @@
         myBatisGenerator.generate(null);
     }
 ```
+
+## 2、maven插件启动
+
+maven插件启动可以在pom.xml中增加插件配置如下：
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.mybatis.generator</groupId>
+            <artifactId>mybatis-generator-maven-plugin</artifactId>
+            <version>1.3.5</version>
+            <configuration>
+                <!--待会要创建的generator配置文件,如果不指定则会默认指定resources目录下的generatorConfig.xml文件-->
+                <configurationFile>src/main/resources/mbg.xml</configurationFile>
+                <verbose>true</verbose>
+                <overwrite>true</overwrite>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+ok，刷新pom.xml，导入成功后，就可以看到maven插件了：
+
+![image-20200425115151748](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200425115151748.png)
+
+双击即可。
 
 # 五、执行成功，工程生成
 
@@ -174,7 +206,7 @@
 
 接着就可以测试增删改查了。
 
-# 六、测试基础的增删改查
+# 七、测试基础的增删改查
 
 方法太多，眼花缭乱，这部分各位可以自己去尝试。
 
@@ -205,7 +237,7 @@
 
 ![image-20200424221947173](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424221947173.png)
 
-# 七、测试多条件
+# 八、测试多条件
 
 我们可以发现除了User实体类以外，MBG还生成了一个Example可以封装条件的对象，里面的方法非常多，就不一一赘述了，说实话，看到的时候还是很惊讶的，因为很多sql语句还没有写过呢（捂脸）。
 

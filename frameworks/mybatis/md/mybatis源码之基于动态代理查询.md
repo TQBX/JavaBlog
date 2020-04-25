@@ -16,7 +16,7 @@ User user1 = userDao1.findById(41);
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
-      //判断当前方法的类型是不是Object
+      //判断它是否为类
       if (Object.class.equals(method.getDeclaringClass())) {
         //如果是的话，直接调用该方法并返回
         return method.invoke(this, args);
@@ -117,7 +117,7 @@ MapperMethod的构造器，sqlCommand和methodSignature是他的两个静态内�
   }
 ```
 
-三、当然本例以findById为例，这里调用的是SelectOne方法，接收statement和parameter。
+三、当然本例以findById为例，这里调用的是SelectOne方法，接收`com.smday.dao.IUserDao.findById`和`41`。
 
 ```java
   @Override
@@ -145,6 +145,8 @@ MapperMethod的构造器，sqlCommand和methodSignature是他的两个静态内�
     try {
       //获取MappedStatement
       MappedStatement ms = configuration.getMappedStatement(statement);
+      //wrapCollection方法是对集合类型或者数组类型的参数做特殊处理
+      //通过执行器调用query方法
       return executor.query(ms, wrapCollection(parameter), rowBounds, Executor.NO_RESULT_HANDLER);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
@@ -158,17 +160,128 @@ MapperMethod的构造器，sqlCommand和methodSignature是他的两个静态内�
 
 ![image-20200418171239644](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200418171239644.png)
 
-六、执行executor.query(ms,xxx,x)方法，首先执行实现类中的方法，获取boundsql，该对象包含sql的具体信息。
+六、默认执行CachingExecutor.query(ms,xxx,x)方法，获取boundsql，该对象包含sql的具体信息，创建缓存key。
 
-十一、执行SimpleExecutor的doQuery方法，创建PreparedStatementHandler对象，通过该handler对象执行query方法
+![image-20200425124505206](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200425124505206.png)
+
+七、先去二级缓存中查询数据，如果二级缓存中没有，则去一级缓存（localCache）中查询，接着数据库（queryFromDatabase）一条龙服务，这部分就不赘述了。最终调用的是Executor的doQuery方法，`list = doQuery(ms, parameter, rowBounds, resultHandler, boundSql);`。
+
+八、创建StatementHandler对象，默认为PreparedStatementHandler，用以操作statement执行操作。
+
+> ps:StatementHandler定义了一些主要的方法：预编译相关prepare、查询query、设置参数parameterize等等。
+
+```java
+  @Override
+  public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
+    Statement stmt = null;
+    try {
+      //从mappedStatement中获取配置信息对象
+      Configuration configuration = ms.getConfiguration();
+      //创建StatementHandler对象，处理sql语句的对象，默认为PreparedStatementHandler
+      StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
+      //创建prepareStatement对象
+      stmt = prepareStatement(handler, ms.getStatementLog());
+      return handler.<E>query(stmt, resultHandler);
+    } finally {
+      closeStatement(stmt);
+    }
+  }
+```
+
+```java
+  public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+      //RoutingStatementHandler并不是真实的服务对象，将会通过适配器模式找到对应的Statementhandler
+    StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+      //拦截链对方法进行拦截
+    statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
+    return statementHandler;
+  }
+```
+
+> Executor和Statement分为三种：Simple、Prepared、Callable。
+>
+> SqlSession四大对象在创建的时候都会被拦截器进行拦截，我们之后再做学习。
+
+九、在创建StatementHandler的时候，我们会发现，它还初始化创建了另外两个重要的对象：
+
+```java
+//用于参数处理 
+this.parameterHandler = configuration.newParameterHandler(mappedStatement, parameterObject, boundSql);
+//用于封装结果集
+this.resultSetHandler = configuration.newResultSetHandler(executor, mappedStatement, rowBounds, parameterHandler, resultHandler, boundSql);
+```
+
+十、在创建prepareStatement对象的时候，其实还通过parameterHandler的prepare()对statement进行了参数的预编译：
+
+```java
+  private Statement prepareStatement(StatementHandler handler, Log statementLog) throws SQLException {
+    Statement stmt;
+    Connection connection = getConnection(statementLog);
+      //预编译（基础配置）
+    stmt = handler.prepare(connection, transaction.getTimeout());
+      //设置参数
+    handler.parameterize(stmt);
+    return stmt;
+  }
+
+//statementhandler的方法
+public Statement prepare(Connection connection, Integer transactionTimeout)
+    Statement statement = null;
+	//预编译
+    statement = instantiateStatement(connection);
+	//设置超时
+    setStatementTimeout(statement, transactionTimeout);
+	//设置获取最大行数
+    setFetchSize(statement);
+    return statement;
+```
+
+还通过`handler.parameterize(stmt);`对参数进行设置，最终通过parameterHandler的setParameters的方法实现了该操作，其中还创建TypeHandler对象完成数据库类型和javaBean类型的映射。
+
+```java
+  @Override
+  public void setParameters(PreparedStatement ps) {
+	  //。。。省略对value值的操作
+      //创建TypeHandler对象完成数据库类型和javaBean类型的映射
+      TypeHandler typeHandler = parameterMapping.getTypeHandler();
+      JdbcType jdbcType = parameterMapping.getJdbcType();
+      if (value == null && jdbcType == null) {
+          jdbcType = configuration.getJdbcTypeForNull();
+      }
+      //设置参数
+      typeHandler.setParameter(ps, i + 1, value, jdbcType);
+  }
+```
+
+十一、获取了ps参数之后，就可以执行statementHandler的query方法进行查询了
+
+```java
+  //PreparedStatementHandler.java  
+  @Override
+  public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
+    //转为PreparedStatement对象
+    PreparedStatement ps = (PreparedStatement) statement;
+    ps.execute();
+    //利用结果集处理对象对结果集进行处理：封装并返回。
+    return resultSetHandler.<E> handleResultSets(ps);
+  }
+```
+
+总结：
+
+> 反射技术运用广泛，基于反射的动态代理模式使我们操作的不再是真实的服务，而是代理对象，正是基于动态代理，mybatis可以在真实对象的基础上，提供额外的服务，我们也可以利用这一特性去自定义一些类，满足我们的需求。
+
+- 通过动态代理调用代理对象的方法。
+- 通过sqlSession执行sql操作的方法：insert|delete|select|update
+
+- 利用Executor对象对其他三大对象进行调度。
+- PreparedStatementHandler对sql进行预编译，并进行了基础配置，接着设置参数，并执行sql语句。
+- ParameterHandler负责对参数进行设置，其中TypeHandler负责数据库类型和javabean类型的映射。
+- 最后查询结果由ResultHandler封装。
 
 
 
 
 
 
-
-
-
-参考文章：关于一级和二级缓存，[你真的会用Mybatis的缓存么，不知道原理的话，容易踩坑哦](https://www.jianshu.com/p/c553169c5921)
 
