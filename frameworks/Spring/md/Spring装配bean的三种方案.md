@@ -46,7 +46,7 @@ class属性定义bean的类型并使用完全限定的类名。
 <!-- 一、使用默认构造函数创建，如果没有该默认构造函数，则创建失败。 -->
 <bean id="userService" class="com.smday.service.impl.UserServiceImpl"></bean>
 
-<!-- 二、使用普通公章中的方法创建对象(使用某个类中的方法创建对象,并存入spring容器 -->
+<!-- 二、使用普通公章中的方法创建对象(使用某个类中的方法创建对象,并存入spring容器，实例工厂需要首先创建工厂对象 -->
 <bean id="instanceFactory" class="com.smday.factory.InstanceFactory"></bean>
 <bean id="userService" factory-bean="instanceFactory" factory-method="getUserService"></bean>
 <!-- 三、使用工厂中的静态方法创建对象 -->
