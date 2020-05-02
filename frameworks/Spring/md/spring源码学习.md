@@ -97,7 +97,7 @@ FactoryBean是bean，而且是一个可以产生或者修饰对象生成的工�
 
 ---
 
-BeanDefinition的Resource定位
+## BeanDefinition的Resource定位
 
 ```java
 //允许指定多个configLocation，还可以指定双亲IoC容器parent，从给定的xml文件中，加载definition。
@@ -320,34 +320,116 @@ protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansE
 	}
 ```
 
-beandefinition载入过程：
+## beandefinition载入过程
 
 1. 调用Xml的解析器得到Document对象，但是刚开始并不会按照bean的规则对其进行解析。
-2. 按照bean的规则解析的过程则由DefaultBeanDefinitionDocumentReader来实现。
-
-```
-parseBeanDefinitions(root, this.delegate);
-```
+2. 按照bean的规则解析的过程则在DefaultBeanDefinitionDocumentReader实现，解析注册的功能是由BeanDefinitionParserDelegate来完成。
+3. 对xml文件逐行解析，根据命名空间不同选择不同的分支，对bean的解析过程存在于parseBeanDefinitionElement中，最后返回holder对象，保存bean的名字、beandefinition以及别名集合。
 
 ```java
-/**
-	 * Process the given bean element, parsing the bean definition
-	 * and registering it with the registry.
-	 */
+//处理给定的bean，解析bean definition，并将其注册到注册表中
+//DefaultBeanDefinitionDocumentReader
 protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
+    //通过解析器解析元素BeanDefinitionHolder:[beandefinition,beanName,aliases[String]]
     BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
     if (bdHolder != null) {
         bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
         try {
-            // Register the final decorated instance.
+            // 向IoC容器注册解析得到的bean definition,
             BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
         }
         catch (BeanDefinitionStoreException ex) {
             getReaderContext().error("Failed to register bean definition with name '" +
                                      bdHolder.getBeanName() + "'", ele, ex);
         }
-        // Send registration event.
+        // BeanDefinition注册完成之后，发送消息
         getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
+    }
+}
+```
+
+具体的解析步骤在BeanDefinitionParserDelegate的parseBeanDefinitionElement中实现：比如基础解析获取bean元素的id、name、aliase等属性值，进阶解析获取class、parent、description等元素，最后封装到beanDefinition中，而后封装到holder对象中。
+
+```java
+@Nullable
+public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+    //省略处理id、name、aliase属性的过程
+    String id = ele.getAttribute(ID_ATTRIBUTE);
+    String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
+    List<String> aliases = new ArrayList<>();
+    //beanName唯一
+    if (containingBean == null) {
+        checkNameUniqueness(beanName, aliases, ele);
+    }
+    //进阶属性解析(class、parent、scope、包括子元素、子属性等)
+    AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
+    if (beanDefinition != null) {
+        //省略beanName为空的情况
+        if (!StringUtils.hasText(beanName)) {
+			//...
+        }
+        String[] aliasesArray = StringUtils.toStringArray(aliases);
+        //封装BeanDefinitionHolder并返回
+        return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
+    }
+    return null;
+}
+```
+
+我们通过查看源码可以发现，到这里仅仅只是解析静态的配置信息，想要让IoC对其进行管理，需要关键的一步：注册。
+
+## beandefinition在IoC中的注册
+
+`BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());`
+
+注册功能的实现存在于DefaultListableBeanFactory中：
+
+```java
+//从holder中获取beanName和BeanDefinition，注册到definitionMap中
+@Override
+public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
+    throws BeanDefinitionStoreException {
+    Assert.hasText(beanName, "Bean name must not be empty");
+    Assert.notNull(beanDefinition, "BeanDefinition must not be null");
+    if (beanDefinition instanceof AbstractBeanDefinition) {
+        try {
+            ((AbstractBeanDefinition) beanDefinition).validate();
+        }
+        catch (BeanDefinitionValidationException ex) {
+            throw new BeanDefinitionStoreException(beanDefinition.getResourceDescription(), beanName,
+                                                   "Validation of bean definition failed", ex);
+        }
+    }
+
+    BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
+    if (existingDefinition != null) {
+        //省略大部分logger和异常
+        this.beanDefinitionMap.put(beanName, beanDefinition);
+    }
+    else {
+        if (hasBeanCreationStarted()) {
+            //保证数据的一致性
+            synchronized (this.beanDefinitionMap) {
+                this.beanDefinitionMap.put(beanName, beanDefinition);
+                List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames.size() + 1);
+                updatedDefinitions.addAll(this.beanDefinitionNames);
+                updatedDefinitions.add(beanName);
+                this.beanDefinitionNames = updatedDefinitions;
+                removeManualSingletonName(beanName);
+            }
+        }
+        else {
+            // 将beanName：beanDefinition以键值对的形式存入beanDefinitionMap
+            this.beanDefinitionMap.put(beanName, beanDefinition);
+            //将beanName存入beanDefinitionNames
+            this.beanDefinitionNames.add(beanName);
+            removeManualSingletonName(beanName);
+        }
+        this.frozenBeanDefinitionNames = null;
+    }
+
+    if (existingDefinition != null || containsSingleton(beanName)) {
+        resetBeanDefinition(beanName);
     }
 }
 ```
