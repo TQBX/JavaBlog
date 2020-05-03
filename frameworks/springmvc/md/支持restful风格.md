@@ -1,6 +1,49 @@
 [toc]
 
-# 一、配置支持Restful过滤器
+# 一、REST风格是啥？
+
+`REST(Representational State Transfer) `：表述性状态传递，它是一种针对网络应用的设计和开发方式，可以降低开发的复杂性，提高系统的可伸缩性。
+
+简单来说，HTTP协议本身是无状态的协议，客户端想要操作服务器，可以通过请求资源的方式，将"状态"进行传递。
+
+- GET请求表示获取资源。
+- POST请求表示新建资源。
+- PUT请求表示更新资源。
+- DELETE请求表示删除资源。
+
+首先我们需要有一个基本的共识就是，浏览器的form表单中，只能有两种请求的方式，GET和POST。那么问题来了，PUT和DELETE如何来表示呢？服务器怎么确认你发的是这俩请求呢？我们需要做些什么呢？
+
+- 配置支持REST风格的过滤器：`HiddenHttpMethodFilter`。
+- Controller控制器在注解上规定接收方法的方式。
+- 前端通过form表单提交，且提交方式为post，再定义一个名为_method的参数，值为请求方式PUT或DELETE。
+
+原理很简单，我们看看`HiddenHttpMethodFilter`的源码就知道了：
+
+```java
+	//HiddenHttpMethodFilter
+	/** Default method parameter: _method */
+	public static final String DEFAULT_METHOD_PARAM = "_method";
+
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
+
+		HttpServletRequest requestToUse = request;
+		//前端必须是post提交的参数
+		if ("POST".equals(request.getMethod()) && request.getAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE) == null) {
+            //获取名为methodParam的值，其实就是_method的值
+			String paramValue = request.getParameter(this.methodParam);
+			if (StringUtils.hasLength(paramValue)) {
+                //装饰器模式对request进行了增强，重写了getMethod方法：put--> PUT
+				requestToUse = new HttpMethodRequestWrapper(request, paramValue);
+			}
+		}
+		//最后放行的是增强后的request
+		filterChain.doFilter(requestToUse, response);
+	}
+```
+
+# 二、配置支持REST风格过滤器
 
 ```xml
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -59,7 +102,7 @@
 </web-app>
 ```
 
-# 二、定义控制器
+# 三、定义控制器
 
 ```java
 @Controller
@@ -92,7 +135,7 @@ public class RestController {
 }
 ```
 
-# 三、前端定义表单
+# 四、前端定义表单
 
 ```html
 <%--
@@ -127,28 +170,9 @@ public class RestController {
 </html>
 ```
 
-# 四、部分源码分析
 
-```java
-	//HiddenHttpMethodFilter
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-			throws ServletException, IOException {
 
-		HttpServletRequest requestToUse = request;
-		//前端必须是post提交的参数
-		if ("POST".equals(request.getMethod()) && request.getAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE) == null) {
-            //获取名为methodParam的值，其实就是_method的值
-			String paramValue = request.getParameter(this.methodParam);
-			if (StringUtils.hasLength(paramValue)) {
-                //装饰器模式对request进行了增强，重写了getMethod方法：put--> PUT
-				requestToUse = new HttpMethodRequestWrapper(request, paramValue);
-			}
-		}
-		//最后放行的是增强后的request
-		filterChain.doFilter(requestToUse, response);
-	}
-```
+
 
 
 
