@@ -39,7 +39,7 @@ web.xml
 
 DispatcherServlet的启动与Servlet的启动过程紧密联系，我们通过以上继承图就可以发现。
 
-## 容器初始化
+## 1. 容器初始化
 
 Servlet中定义的init()方法就是其生命周期的初始化方法，接着往下走，GenericServlet并没有给出具体实现，在HttpServletBean中的init()方法给出了具体的实现：
 
@@ -232,7 +232,7 @@ protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicati
 
 - 接着是beanDefinition在IoC中的注册，也就是把beanName：beanDefinition以键值对的形式存入beandefinitionMap中。
 
-## MVC的初始化
+## 2. MVC的初始化
 
 MVC的初始化在DispatcherServlet的initStratefies方法中执行，通过方法名，我们就可以得出结论，就是在这进行了对九大组件的初始化，其实基本上都是从IoC容器中获取对象：
 
@@ -333,7 +333,7 @@ handlerMappings存在的意义在于为HTTP请求找到对应的控制器Control
 
 总的来说，MVC初始化的过程建立在IoC容器初始化之后，毕竟要从容器中取出这些组件对象。
 
-## HandlerMapping的实现原理
+## 3. HandlerMapping的实现原理
 
 ### HandlerExecutionChain
 
@@ -459,7 +459,9 @@ public void register(T mapping, Object handler, Method method) {
 
 至此，所有的Controller，以及其中标注了@RequestMapping注解的方法，都被一一解析，注册进HashMap中，于是，对应请求路径与处理方法就一一匹配，此时HandlerMapping也初始化完成。
 
-# 三、请求分发
+# 三、请求响应处理
+
+## 1. 请求分发
 
 我们需要明确的一个点是，请求过来的时候，最先执行的地方在哪，是Servlet的service方法，我们只需要看看该方法在子类中的一个实现即可：
 
@@ -554,3 +556,32 @@ protected void doDispatch(HttpServletRequest request, HttpServletResponse respon
 
 
 
+## 2. 参数解析
+
+## 3. 返回值解析
+
+## 4. 视图解析
+
+Map、String、ModelMap --> bindMap
+
+最后返回的都是ModelAndView对象，包含了逻辑名和模型对象的视图。
+
+>  视图解析器 viewResolver --实例化 --> view（无状态的，不会有线程安全问题）
+
+### 视图解析器
+
+视图解析器（实现ViewResolver接口）：将逻辑视图解析为具体的视图对象。
+
+![image-20200506192115248](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200506192115248.png)
+
+每个视图解析器都实现了Ordered接口，并开放order属性，order越小优先级越高。
+
+按照视图解析器的优先顺序对逻辑视图名进行解析，直到解析成功并返回视图对象，否则抛出异常。
+
+### 视图
+
+视图（实现View接口）：渲染模型数据，将模型数据以某种形式展现给用户。
+
+![image-20200506192330201](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200506192330201.png)
+
+最终采取的视图对象对模型数据进行渲染render，处理器并不关心，处理器关心生产模型的数据，实现解耦。
