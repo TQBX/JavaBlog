@@ -33,6 +33,37 @@ web.xml
     </servlet-mapping>
 ```
 
+springmvc.xml配置
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+    <!-- 开启注解扫描 -->
+    <context:component-scan base-package="com.smday"/>
+
+    <!-- 视图解析器对象 -->
+    <bean id="internalResourceViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+    <!-- 开启SpringMVC框架注解的支持 -->
+    <mvc:annotation-driven/>
+    <!--放行静态资源-->
+    <mvc:default-servlet-handler/>
+
+</beans>
+```
+
 # 二、初始化
 
 ![DispatcherServlet](E:\1JavaBlog\frameworks\springmvc\pic\DispatcherServlet.png)
@@ -228,7 +259,7 @@ protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicati
 
 - beanDefinition的载入过程，springMVC做了一些改变，比如定义了针对mvc的命名空间解析MvcNamespaceHandler。
 
-![image-20200504133528656](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200504133528656.png)
+![](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200504133528656.png)
 
 - 接着是beanDefinition在IoC中的注册，也就是把beanName：beanDefinition以键值对的形式存入beandefinitionMap中。
 
@@ -343,13 +374,11 @@ HandlerMapping在SpringMVC扮演着相当重要的角色，我们说，它可以
 
 HandlerMapping是一个接口，其中包含一个getHandler方法，能够通过该方法获得与HTTP请求对应的handlerExecutionChain，而这个handlerExecutionChain对象中持有handler和interceptorList，以及和设置拦截器相关的方法。可以判断是同通过这些配置的拦截器对handler对象提供的功能进行了一波增强。
 
-![image-20200504160311683](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200504160311683.png)
+![](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200504160311683.png)
 
 ### RequestMappingHandlerMapping
 
 我们以其中一个HandlerMapping作为例子解析一下，我们关注一下：
-
-
 
 ```java
 protected void initHandlerMethods() {
@@ -521,21 +550,19 @@ protected void doDispatch(HttpServletRequest request, HttpServletResponse respon
                 noHandlerFound(processedRequest, response);
                 return;
             }
-            //为当前的request请求寻找合适的adaptor
+            //为当前的request请求寻找合适的adapter
             HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
             String method = request.getMethod();
             boolean isGet = "GET".equals(method);
-            //判断是否支持getLastModified，如果不支持，返回-1
             if (isGet || "HEAD".equals(method)) {
+                //判断是否支持getLastModified，如果不支持，返回-1
                 long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Last-Modified value for [" + getRequestUri(request) + "] is: " + lastModified);
-                }
                 if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
                     return;
                 }
             }
+            //执行注册拦截器的preHandle方法
             if (!mappedHandler.applyPreHandle(processedRequest, response)) {
                 return;
             }
@@ -545,28 +572,546 @@ protected void doDispatch(HttpServletRequest request, HttpServletResponse respon
             if (asyncManager.isConcurrentHandlingStarted()) {
                 return;
             }
-
+			//如果mv!=null&&mv对象没有View，则为mv对象设置一个默认的ViewName
             applyDefaultViewName(processedRequest, mv);
+            //执行注册拦截器的applyPostHandle方法
             mappedHandler.applyPostHandle(processedRequest, response, mv);
         }
+        //进行视图解析和渲染
         processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
     
 }
 ```
 
+需要注意的是，mappedHandler和HandlerAdapter都是从对应的集合中遍历查找，一旦找到可以执行的目标，就会停止查找，我们也可以人为定义优先级，决定他们之间的次序。
 
+## 2. 请求处理
 
-## 2. 参数解析
+RequestMappingHandlerAdapter的handleInternal方法，含有真正处理请求的逻辑。
 
-## 3. 返回值解析
+```java
+@Override
+protected ModelAndView handleInternal(HttpServletRequest request,
+                                      HttpServletResponse response, HandlerMethod handlerMethod) throws Exception {
+    //定义返回值变量
+    ModelAndView mav;
+    //对请求进行检查 supportedMethods和requireSession
+    checkRequest(request);
 
-## 4. 视图解析
+    // 看看synchronizeOnSession是否开启，默认为false
+    if (this.synchronizeOnSession) {
+        HttpSession session = request.getSession(false);
+        //Httpsession可用
+        if (session != null) {
+            Object mutex = WebUtils.getSessionMutex(session);
+            //加锁，所有请求串行化
+            synchronized (mutex) {
+                mav = invokeHandlerMethod(request, response, handlerMethod);
+            }
+        }
+        else {
+            // 没有可用的Httpsession -> 没必要上锁
+            mav = invokeHandlerMethod(request, response, handlerMethod);
+        }
+    }
+    else {
+        // 正常调用处理方法
+        mav = invokeHandlerMethod(request, response, handlerMethod);
+    }
+    //检查响应头是否包含Cache-Control
+    if (!response.containsHeader(HEADER_CACHE_CONTROL)) {
+        if (getSessionAttributesHandler(handlerMethod).hasSessionAttributes()) {
+            applyCacheSeconds(response, this.cacheSecondsForSessionAttributeHandlers);
+        }
+        else {
+            prepareResponse(response);
+        }
+    }
 
-Map、String、ModelMap --> bindMap
+    return mav;
+}
+```
+
+RequestMappingHandlerAdapter的invokeHandlerMethod方法，真正返回mv。
+
+```java
+@Nullable
+protected ModelAndView invokeHandlerMethod(HttpServletRequest request,
+                                           HttpServletResponse response, HandlerMethod handlerMethod) throws Exception {
+    //对HttpServletRequest进行包装，产生ServletWebRequest处理web的request对象
+    ServletWebRequest webRequest = new ServletWebRequest(request, response);
+    try {
+        //创建WebDataBinder对象的工厂
+        WebDataBinderFactory binderFactory = getDataBinderFactory(handlerMethod);
+        //创建Model对象的工厂
+        ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
+		//将handlerMethod对象进行包装，创建ServletInvocableHandlerMethod对象
+        //向invocableMethod设置相关属性（最后是由invocableMethod对象调用invokeAndHandle方法
+        ServletInvocableHandlerMethod invocableMethod = createInvocableHandlerMethod(handlerMethod);
+        if (this.argumentResolvers != null) {
+            invocableMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
+        }
+        if (this.returnValueHandlers != null) {
+            invocableMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
+        }
+        invocableMethod.setDataBinderFactory(binderFactory);
+        invocableMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
+		//创建ModelAndViewContainer对象，里面存放有向域中存入数据的map
+        ModelAndViewContainer mavContainer = new ModelAndViewContainer();
+        mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
+        modelFactory.initModel(webRequest, mavContainer, invocableMethod);
+        mavContainer.setIgnoreDefaultModelOnRedirect(this.ignoreDefaultModelOnRedirect);
+
+        AsyncWebRequest asyncWebRequest = WebAsyncUtils.createAsyncWebRequest(request, response);
+        asyncWebRequest.setTimeout(this.asyncRequestTimeout);
+
+        WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+		//省略异步处理
+        //正常调用
+        invocableMethod.invokeAndHandle(webRequest, mavContainer);
+        if (asyncManager.isConcurrentHandlingStarted()) {
+            return null;
+        }
+		//获取ModelAndView对象
+        return getModelAndView(mavContainer, modelFactory, webRequest);
+    }
+    finally {
+        webRequest.requestCompleted();
+    }
+}
+```
+
+ServletInvocableHandlerMethod的invokeAndHandle方法：反射调用方法，得到返回值。
+
+```java
+public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,Object... providedArgs) throws Exception {
+	//获取参数，通过反射得到返回值
+    Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+    //设置响应状态
+    setResponseStatus(webRequest);
+	
+    if (returnValue == null) {
+        if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
+            mavContainer.setRequestHandled(true);
+            return;
+        }
+    }
+    else if (StringUtils.hasText(getResponseStatusReason())) {
+        mavContainer.setRequestHandled(true);
+        return;
+    }
+
+    mavContainer.setRequestHandled(false);
+    Assert.state(this.returnValueHandlers != null, "No return value handlers");
+    try {
+        //处理返回值
+        this.returnValueHandlers.handleReturnValue(
+            returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
+    }
+    catch (Exception ex) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+        }
+        throw ex;
+    }
+}
+```
+
+### 参数解析过程
+
+我们可以知道的是，传递参数时，可以传递Map，基本类型，POJO，ModelMap等参数，解析之后的结果又如何呢？我们以一个具体的例子举例比较容易分析：
+
+```java
+    @RequestMapping("/handle03/{id}")
+    public String handle03(@PathVariable("id") String sid,
+                           Map<String,Object> map){
+        System.out.println(sid);
+        map.put("msg","你好!");
+        return "success";
+    }
+```
+
+```java
+/**
+ * 获取当前请求的方法参数值。
+ */
+private Object[] getMethodArgumentValues(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,Object... providedArgs) throws Exception {
+    //获取参数对象
+    MethodParameter[] parameters = getMethodParameters();
+    //创建一个同等大小的数组存储参数值
+    Object[] args = new Object[parameters.length];
+    for (int i = 0; i < parameters.length; i++) {
+        MethodParameter parameter = parameters[i];
+        parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
+        args[i] = resolveProvidedArgument(parameter, providedArgs);
+        if (args[i] != null) {
+            continue;
+        }
+        if (this.argumentResolvers.supportsParameter(parameter)) {
+            //参数处理器处理参数（针对不同类型的参数有不同类型的处理参数的策略）
+            args[i] = this.argumentResolvers.resolveArgument(
+                parameter, mavContainer, request, this.dataBinderFactory);
+            continue;
+        }
+        if (args[i] == null) {
+            throw new IllegalStateException();
+    	}
+    return args;
+}
+```
+
+resolveArgument方法：
+
+```java
+@Override
+@Nullable
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+	//获取注解的信息
+    NamedValueInfo namedValueInfo = getNamedValueInfo(parameter);
+    //包装parameter对象
+    MethodParameter nestedParameter = parameter.nestedIfOptional();
+	//获取@PathVariable指定的属性名
+    Object resolvedName = resolveStringValue(namedValueInfo.name);
+    //
+    if (resolvedName == null) {
+        throw new IllegalArgumentException(
+            "Specified name must not resolve to null: [" + namedValueInfo.name + "]");
+    }
+	//根据name从url中寻找并获取参数值
+    Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
+    //没有匹配
+    if (arg == null) {
+        //如果有default值，则根据该值查找
+        if (namedValueInfo.defaultValue != null) {
+            arg = resolveStringValue(namedValueInfo.defaultValue);
+        }
+        //如果required为false，则可以不指定name，但默认为true。
+        else if (namedValueInfo.required && !nestedParameter.isOptional()) {
+            handleMissingValue(namedValueInfo.name, nestedParameter, webRequest);
+        }
+        
+        arg = handleNullValue(namedValueInfo.name, arg, nestedParameter.getNestedParameterType());
+    }
+    //虽然匹配，路径中传入的参数如果是“ ”，且有默认的name，则按照默认处理
+    else if ("".equals(arg) && namedValueInfo.defaultValue != null) {
+        arg = resolveStringValue(namedValueInfo.defaultValue);
+    }
+
+    if (binderFactory != null) {
+        WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
+            arg = binder.convertIfNecessary(arg, parameter.getParameterType(), parameter);   
+    }
+    handleResolvedValue(arg, namedValueInfo.name, parameter, mavContainer, webRequest);
+    return arg;
+}
+```
+
+getNameValueInfo方法：
+
+```java
+	private NamedValueInfo getNamedValueInfo(MethodParameter parameter) {
+        //从缓存中获取
+		NamedValueInfo namedValueInfo = this.namedValueInfoCache.get(parameter);
+		if (namedValueInfo == null) {
+            //创建一个namedValueInfo对象
+			namedValueInfo = createNamedValueInfo(parameter);
+            //如果没有在注解中指定属性名，默认为参数名
+			namedValueInfo = updateNamedValueInfo(parameter, namedValueInfo);
+            //更新缓存
+			this.namedValueInfoCache.put(parameter, namedValueInfo);
+		}
+		return namedValueInfo;
+	}
+```
+
+createNamedValueInfo：获取@PathVariable注解的信息，封装成NamedValueInfo对象
+
+```java
+	@Override
+	protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+		PathVariable ann = parameter.getParameterAnnotation(PathVariable.class);
+		Assert.state(ann != null, "No PathVariable annotation");
+		return new PathVariableNamedValueInfo(ann);
+	}
+```
+
+updateNamedValueInfo：
+
+```java
+private NamedValueInfo updateNamedValueInfo(MethodParameter parameter, NamedValueInfo info) {
+    String name = info.name;
+    if (info.name.isEmpty()) {
+        //如果注解中没有指定name，则为参数名
+        name = parameter.getParameterName();
+        if (name == null) {
+            throw new IllegalArgumentException(
+                "Name for argument type [" + parameter.getNestedParameterType().getName() +
+                "] not available, and parameter name information not found in class file either.");
+        }
+    }
+    String defaultValue = (ValueConstants.DEFAULT_NONE.equals(info.defaultValue) ? null : info.defaultValue);
+    return new NamedValueInfo(name, info.required, defaultValue);
+}
+```
+
+resolveName方法：
+
+![image-20200508214338359](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200508214338359.png)
+
+参数解析的过程：
+
+- 根据方法对象，获取参数对象数组，并创建存储参数的数组。
+- 遍历参数对象数组，并根据参数解析器argumentResolver解析。
+- 如果没有参数解析器，报错。
+- 参数解析时，先尝试获取注解的信息，以@PathVariable为例。
+- 根据指定的name从url中获取参数值，如果没有指定，则默认为自己传入的参数名。
+
+### 传递页面参数
+
+我们可能会通过Map、Model、ModelMap等向域中存入键值对，这部分包含在请求处理中。
+
+我们要关注的是ModelAndViewContainer这个类，它里面默认包含着BindingAwareModelMap。
+
+在解析参数的时候，就已经通过MapMethodProcessor参数处理器初始化了一个BindingAwareModelMap。
+
+![image-20200509101125298](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200509101125298.png)
+
+![image-20200509101209863](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200509101209863.png)
+
+当然其实这里重点还是参数解析，至于数据为什么封装进map，就很简单了，无非是反射执行方法的时候，通过put将数据存入，当然最后的数据也就存在于ModelAndViewContainer中。
+
+### 返回值解析
+
+省略寻找返回值解析器的过程，因为返回值为视图名，所以解析器为：ViewNameMethodReturnValueHandler。
+
+```java
+@Override
+public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+
+    if (returnValue instanceof CharSequence) {
+        //获取视图名
+        String viewName = returnValue.toString();
+        //向mavContainer中设置
+        mavContainer.setViewName(viewName);
+        //是否是isRedirectViewName
+        if (isRedirectViewName(viewName)) {
+            mavContainer.setRedirectModelScenario(true);
+        }
+    }
+    else if (returnValue != null){
+        // should not happen
+        throw new UnsupportedOperationException("Unexpected return type: " +
+                                                returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
+    }
+}
+```
+
+isRedirectViewName方法
+
+```java
+	protected boolean isRedirectViewName(String viewName) {
+        //是否符合自定义的redirectPatterns，或者满足redirect:开头的名字
+		return (PatternMatchUtils.simpleMatch(this.redirectPatterns, viewName) || viewName.startsWith("redirect:"));
+	}
+```
+
+最后通过getModelAndView获取mv对象，我们来详细解析一下：
+
+```java
+@Nullable
+private ModelAndView getModelAndView(ModelAndViewContainer mavContainer,ModelFactory modelFactory, NativeWebRequest webRequest) throws Exception {
+	//Promote model attributes listed as @SessionAttributes to the session
+    modelFactory.updateModel(webRequest, mavContainer);
+    //如果请求已经处理完成
+    if (mavContainer.isRequestHandled()) {
+        return null;
+    }
+    //从mavContainer中获取我们存入的数据map
+    ModelMap model = mavContainer.getModel();
+    //通过视图名、modelmap、和status创建一个ModelAndView对象
+    ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model, mavContainer.getStatus());
+    if (!mavContainer.isViewReference()) {
+        mav.setView((View) mavContainer.getView());
+    }
+    if (model instanceof RedirectAttributes) {
+        Map<String, ?> flashAttributes = ((RedirectAttributes) model).getFlashAttributes();
+        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+        if (request != null) {
+            RequestContextUtils.getOutputFlashMap(request).putAll(flashAttributes);
+        }
+    }
+    return mav;
+}
+```
 
 最后返回的都是ModelAndView对象，包含了逻辑名和模型对象的视图。
 
+返回值解析的过程相对比较简单：
+
+- 根据返回的参数，获取对应的返回值解析器。
+- 获取视图名，如果是需要redirect，则`mavContainer.setRedirectModelScenario(true);`
+
+- 其他情况下，直接给mvcContainer中的ViewName视图名属性设置上即可。
+- 最后将mvcContainer的model、status、viewName取出，创建mv对象返回。
+
+【总结】
+
+参数解析、返回值解析两个过程都包含大量的解决策略，其中寻找合适的解析器的过程都是先遍历初始化的解析器表，然后判断是否需要异步处理，判断是否可以处理返回值类型，如果可以的话，就使用该解析器进行解析，如果不行，就一直向下遍历，直到表中没有解析器为止。
+
+## 3. 视图解析
+
+```java
+private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,@Nullable HandlerExecutionChain mappedHandler, @Nullable ModelAndView mv,
+ @Nullable Exception exception) throws Exception {
+    boolean errorView = false;
+    // 保证渲染一次，cleared作为标记
+    if (mv != null && !mv.wasCleared()) {
+        //渲染过程！！！
+        render(mv, request, response);
+        if (errorView) {
+            WebUtils.clearErrorRequestAttributes(request);
+        }
+    }
+}
+```
+
+DispatcherServlet的render方法
+
+```java
+protected void render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    // Determine locale for request and apply it to the response.
+    Locale locale =
+        (this.localeResolver != null ? this.localeResolver.resolveLocale(request) : request.getLocale());
+    response.setLocale(locale);
+
+    View view;
+    //获取视图名
+    String viewName = mv.getViewName();
+    if (viewName != null) {
+        //通过视图解析器viewResolvers对视图名进行处理，创建view对象
+        view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
+    }
+    else {
+        view = mv.getView();
+    }
+    if (mv.getStatus() != null) {
+        response.setStatus(mv.getStatus().value());
+    }
+    view.render(mv.getModelInternal(), request, response);   
+}
+```
+
+获取视图解析器，解析视图名：
+
+```java
+@Nullable
+protected View resolveViewName(String viewName, @Nullable Map<String, Object> model,
+Locale locale, HttpServletRequest request) throws Exception {
+
+    //这里我们注册的是InternalResourceViewResolver
+    if (this.viewResolvers != null) {
+        for (ViewResolver viewResolver : this.viewResolvers) {
+            View view = viewResolver.resolveViewName(viewName, locale);
+            if (view != null) {
+                return view;
+            }
+        }
+    }
+    return null;
+}
+```
+
+UrlBasedViewResolver的createView方法：
+
+```java
+	@Override
+	protected View createView(String viewName, Locale locale) throws Exception {
+		//如果解析器不能处理所给的view，就返回null，让下一个解析器看看能否执行
+		if (!canHandle(viewName, locale)) {
+			return null;
+		}
+		// Check for special "redirect:" prefix.
+		if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
+			//判断是否需要重定向
+		}
+		// Check for special "forward:" prefix.
+		if (viewName.startsWith(FORWARD_URL_PREFIX)) {
+			//判断是否需要转发
+		}
+		//调用父类的loadView方法
+		return super.createView(viewName, locale);
+	}
+```
+
+最后返回的视图对象：
+
+![image-20200509110930393](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200509110930393.png)
+
 >  视图解析器 viewResolver --实例化 --> view（无状态的，不会有线程安全问题）
+
+AbstractView的render方法
+
+```java
+@Override
+public void render(@Nullable Map<String, ?> model, HttpServletRequest request,
+HttpServletResponse response) throws Exception {
+	
+    //获取合并后的map，有我们存入域中的map，还有PathVariable对应的键值等
+    Map<String, Object> mergedModel = createMergedOutputModel(model, request, response);
+    prepareResponse(request, response);
+    //根据给定的model渲染内部资源，如将model设置为request的属性
+    renderMergedOutputModel(mergedModel, getRequestToExpose(request), response);
+}
+```
+
+InternalResourceView的renderMergedOutputModel
+
+```java
+@Override
+protected void renderMergedOutputModel(
+    Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+    //将model中的值设置到request域中
+    exposeModelAsRequestAttributes(model, request);
+
+    // 如果有的话，给request设置helpers
+    exposeHelpers(request);
+
+    // 将目标地址设置到request中
+    String dispatcherPath = prepareForRendering(request, response);
+
+    // 获取目标资源（通常是JSP）的RequestDispatcher。
+    RequestDispatcher rd = getRequestDispatcher(request, dispatcherPath);
+
+    // 如果已经包含或响应已经提交，则执行包含，否则转发。
+    if (useInclude(request, response)) {
+        response.setContentType(getContentType());
+        rd.include(request, response);
+    }
+    else {
+        // Note: 转发的资源应该确定内容类型本身。
+        rd.forward(request, response);
+    }
+}
+```
+
+exposeModelAsRequestAttributes
+
+```java
+protected void exposeModelAsRequestAttributes(Map<String, Object> model,HttpServletRequest request) throws Exception {
+	//遍历model
+    model.forEach((modelName, modelValue) -> {
+        if (modelValue != null) {
+            //向request中设置值
+            request.setAttribute(modelName, modelValue);
+        }
+        else {
+            //value为null的话，移除该name
+            request.removeAttribute(modelName);
+        }
+    });
+}
+```
 
 ### 视图解析器
 
@@ -585,3 +1130,4 @@ Map、String、ModelMap --> bindMap
 ![image-20200506192330201](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200506192330201.png)
 
 最终采取的视图对象对模型数据进行渲染render，处理器并不关心，处理器关心生产模型的数据，实现解耦。
+
