@@ -48,7 +48,7 @@ CREATE TABLE `account` (
 insert  into `account`(`ID`,`UID`,`MONEY`) values (1,46,1000),(2,45,1000),(3,46,2000);
 ```
 
-![image-20200417121826536](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200417121826536.png)
+![image-20200417121826536](pic/111.png)
 
 【场景】
 

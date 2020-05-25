@@ -45,7 +45,7 @@
 
 # 二、建立相应的目录结构
 
-![image-20200424224059787](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424224059787.png)
+![image-20200424224059787](pic/1.png)
 
 # 三、编写mbg的XML配置
 
@@ -156,7 +156,7 @@ maven插件启动可以在pom.xml中增加插件配置如下：
 
 ok，刷新pom.xml，导入成功后，就可以看到maven插件了：
 
-![image-20200425115151748](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200425115151748.png)
+![image-20200425115151748](pic/2.png)
 
 双击即可。
 
@@ -164,7 +164,7 @@ ok，刷新pom.xml，导入成功后，就可以看到maven插件了：
 
 紧接着，就出现了以下画面，自动再dao下生成了mapper接口和mapper.xml，再domain中生成了一个实体类User和一封装条件的UserExample。
 
-![image-20200424222037196](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424222037196.png)
+![image-20200424222037196](pic/3.png)
 
 
 
@@ -235,7 +235,7 @@ ok，刷新pom.xml，导入成功后，就可以看到maven插件了：
     }
 ```
 
-![image-20200424221947173](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424221947173.png)
+![image-20200424221947173](pic/4.png)
 
 # 八、测试多条件
 
@@ -279,6 +279,6 @@ ok，刷新pom.xml，导入成功后，就可以看到maven插件了：
     }
 ```
 
-![image-20200424223129308](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424223129308.png)
+![image-20200424223129308](pic/5.png)
 
-![image-20200424223114455](C:\Users\13327\AppData\Roaming\Typora\typora-user-images\image-20200424223114455.png)
+![image-20200424223114455](pic/6.png)
