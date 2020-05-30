@@ -95,3 +95,84 @@ rpm -qa | grep mysql
 rpm -e mysql-libs   #普通删除模式
 rpm -e --nodeps mysql-libs #强制删除
 ```
+
+![](install/6.png)
+
+2、安装编译代码需要的包
+
+```bash
+yum -y install make gcc-c++ cmake bison-devel  ncurses-devel
+```
+
+3、创建`/usr/local/mysql`目录，将文件解压到该目录中
+
+```bash
+mkdir /usr/local/mysql
+tar -zxvf mysql-5.6.14.tar.gz -C /usr/local/mysql
+```
+
+4、编译安装源码
+
+```bash
+cd /usr/local/mysqlmysql-5.6.14
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DMYSQL_DATADIR=/usr/local/mysql/data -DSYSCONFDIR=/etc -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_MEMORY_STORAGE_ENGINE=1 -DWITH_READLINE=1 -DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock -DMYSQL_TCP_PORT=3306 -DENABLED_LOCAL_INFILE=1 -DWITH_PARTITION_STORAGE_ENGINE=1 -DEXTRA_CHARSETS=all -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci
+```
+
+5、编译并安装
+
+```bash
+make && make install #这步等待时间较长
+```
+
+6、查看是否已经存在mysql用户及用户组，没有则创建，并修改权限
+
+```bash
+cat /etc/passwd #查看用户列表
+cat /etc/group  #查看用户组列表
+```
+
+```bash
+groupadd mysql
+useradd -g mysql mysql
+# 修改/usr/local/mysql权限
+chown -R mysql:mysql /usr/local/mysql
+```
+
+7、初始化配置，进入安装路径，执行初始化配置脚本，创建系统自带的数据库和表
+
+```bash
+cd /usr/local/mysql
+scripts/mysql_install_db --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data --user=mysql
+```
+
+8、在启动MySQL服务时，会按照一定次序搜索`my.cnf`，先在`/etc`目录下找，找不到则会搜索`$basedir/my.cnf`，在本例中就是` /usr/local/mysql/my.cnf`，因此，如果存在`/etc/my.cnf`，需要修改其名字，防止冲突。
+
+```bash
+mv /etc/my.cnf /etc/my.cnf.bak
+```
+
+9、添加服务，拷贝服务脚本到init.d目录，并设置开机启动 
+
+```bash
+cd /usr/local/mysql
+cp support-files/mysql.server /etc/init.d/mysql  #拷贝服务脚本
+chkconfig mysql on  # 设置开机启动 
+service mysql start # 启动服务
+```
+
+10、配置path路径，将bin目录路径加入path。
+
+```bash
+vim /etc/profile
+PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin:/usr/local/mysql/bin
+source /etc/profile
+```
+
+11、执行mysql指令
+
+```bash
+mysql -u root
+mysql> set password = password('123456');
+```
+
+12、成功！
