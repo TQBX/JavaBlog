@@ -74,6 +74,10 @@ mysql> ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
 mysql> flush privileges;
 ```
 
+# Error response from daemon: oci runtime error: container_linux.go:235: starting container process ...
+
+使用阿里云的Centos7云服务器使用docker时出现如下错误。参考该博客，使用`yum update`，问题解决：[https://blog.csdn.net/liqun_super/article/details/88304094](https://blog.csdn.net/liqun_super/article/details/88304094)
+
 # 配置Docker国内镜像源
 
 可以配置使用阿里云镜像，提升拉取速度：[https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors](https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors)
