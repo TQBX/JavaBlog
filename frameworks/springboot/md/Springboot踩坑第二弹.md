@@ -64,3 +64,30 @@ spring:
 
 参考：[https://www.jianshu.com/p/1507a47f43ac](https://www.jianshu.com/p/1507a47f43ac)
 
+【配置properties或yml】
+
+```yml
+#application.yml
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+```
+
+【配置Customizer】
+
+```java
+@org.springframework.context.annotation.Configuration
+public class MyBatisConfig {
+
+    @Bean
+    public ConfigurationCustomizer configurationCustomizer(){
+        return new ConfigurationCustomizer() {
+            @Override
+            public void customize(Configuration configuration) {
+                configuration.setMapUnderscoreToCamelCase(true);
+            }
+        };
+    }
+}
+```
+
