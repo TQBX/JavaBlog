@@ -1,10 +1,6 @@
+# 一、快速体验整合缓存
 
-
-
-
-# 快速体验整合缓存
-
-Springboot2.x的cache组件在I/O中，为Spring cache abstraction
+Springboot2.x的cache组件在I/O中，为`Spring cache abstraction`。
 
 ![](src/2.png)
 
@@ -37,7 +33,7 @@ Springboot2.x的cache组件在I/O中，为Spring cache abstraction
 </dependencies>
 ```
 
-编辑application.yml配置
+编辑application.yml配置。
 
 ```yml
 # 配置数据源
@@ -54,7 +50,7 @@ server:
   port: 8088
 ```
 
-定义一个与数据库交互的mapper
+定义一个与数据库交互的mapper。
 
 ```java
 @Mapper
@@ -109,9 +105,87 @@ public class EmployeeService {
 
 
 
+# 二、整合Redis
 
+pom.xml到入依赖：
 
-# 源码解读
+```xml
+<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>2.2.6.RELEASE</version>
+</dependency>
+```
 
-![](src/1.png)
+配置application.yml：
+
+```yml
+spring:
+  redis:
+    host: 121.199.16.31
+    password: 123456
+```
+
+测试Redis：
+
+```java
+@SpringBootTest
+class Springboot01CacheApplicationTests {
+
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;  //操作的k-v是字符串
+    @Autowired
+    RedisTemplate<Object,Employee> redisTemplate;  //操作的k-v是对象
+    @Test
+    public void test1(){
+        String name = stringRedisTemplate.opsForValue().get("name");
+        Employee employee = new Employee();
+        employee.setdId(1);
+        employee.setGender(2);
+        employee.setLastName("hyh");
+        redisTemplate.opsForValue().set("emp",employee);
+    }
+}
+```
+
+自定义redis序列化规则：
+
+```java
+@Configuration
+public class MyRedisConfig {
+
+    @Bean
+    public RedisTemplate<Object, Employee> redisTemplate(RedisConnectionFactory redisConnectionFactory)
+            throws UnknownHostException {
+        RedisTemplate<Object, Employee> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory);
+        template.setDefaultSerializer(new Jackson2JsonRedisSerializer<>(Employee.class));
+        return template;
+    }
+}
+```
+
+Springboot2.x自定义ReidsCacheManager的改变：[https://www.jianshu.com/p/20366ecf12ce](https://www.jianshu.com/p/20366ecf12ce)
+
+```java
+/**
+     * 缓存管理器
+     */
+@Bean
+public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+    //初始化一个RedisCacheWriter
+    RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(redisConnectionFactory);
+    //设置CacheManager的值序列化方式为json序列化
+    RedisSerializer<Object> jsonSerializer = new GenericJackson2JsonRedisSerializer();
+    RedisSerializationContext.SerializationPair<Object> pair = RedisSerializationContext.SerializationPair
+        .fromSerializer(jsonSerializer);
+    RedisCacheConfiguration defaultCacheConfig=RedisCacheConfiguration.defaultCacheConfig()
+        .serializeValuesWith(pair);
+    //设置默认超过期时间是30秒
+    defaultCacheConfig.entryTtl(Duration.ofSeconds(30));
+    //初始化RedisCacheManager
+    return new RedisCacheManager(redisCacheWriter, defaultCacheConfig);
+}
+```
 

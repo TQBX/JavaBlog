@@ -95,3 +95,27 @@ systemctl daemon-reload
 systemctl restart docker
 ```
 
+# Centos7开放指定端口
+
+```bash
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+firewall-cmd --reload
+firewall-cmd --query-port=6379/tcp
+```
+
+# Centos7设置防火墙开机自启和禁止开机自启
+
+[https://www.cnblogs.com/crazycode2/p/11333003.html](https://www.cnblogs.com/crazycode2/p/11333003.html)
+
+```bash
+systemctl enable firewalld #设置自启
+systemctl disable firewalld #禁止自启
+```
+
+# Docker安装Redis完整过程及配置远程连接&踩坑注意事项
+
+[https://blog.csdn.net/u010358168/article/details/97143703](https://blog.csdn.net/u010358168/article/details/97143703)
+
+# Docker容器启动失败 Failed to start Docker Application Container Engine.
+
+[https://blog.csdn.net/sdrfengmi/article/details/87929593](https://blog.csdn.net/sdrfengmi/article/details/87929593)
