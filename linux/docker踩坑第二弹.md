@@ -16,3 +16,6 @@ netstat -tanlp
 kill 17203
 ```
 
+# 二、docker删除image
+
+[https://www.cnblogs.com/twyth/articles/7240226.html](https://www.cnblogs.com/twyth/articles/7240226.html)
