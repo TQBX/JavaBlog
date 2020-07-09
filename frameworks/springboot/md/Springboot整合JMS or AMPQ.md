@@ -24,7 +24,7 @@
 
 **Broker**：表示消息队列服务器实体。
 
-![](img/rabbit.png)
+![](https://hyhwky.com/2020/06/25/rabbit.png)
 
 # RabbitMQ的几种模式
 
@@ -32,23 +32,23 @@
 
 - **简单模式**：一对一，即一个生产者对应一个消费者。
 
-  ![hello world](img/hello.png)
+  ![hello world](https://hyhwky.com/2020/06/25/hello.png)
 
 - **Work队列**：一个生产者对应多个消费者，但是只能有一个消费者获得消息。
 
-  ![Work queue](img/work.png)
+  ![Work queue](https://hyhwky.com/2020/06/25/work.png)
 
 - **发布/订阅Publish/Subscribe**：发布者将消息发送到交换器，交换器绑定多个队列，监听这些队列的订阅者都能收到消息，也就是我们后面要说的fanout。
 
-  ![Publish/Subscribe](img/ps.png)
+  ![Publish/Subscribe](https://hyhwky.com/2020/06/25/ps.png)
 
 - **路由Routing**：交换器和队列通过路由键绑定，生产者将消息发送到交换器时指定路由键，只会发送到对应的队列，监听该队列的消费者收到信息。
 
-  ![Routing](img/routing.png)
+  ![Routing](https://hyhwky.com/2020/06/25/routing.png)
 
 - **主题Topics**：和Routing路由模式一样，都是匹配路由键，只不过Topic是通过通配符匹配。`#`匹配0个或多个单词，`*`匹配一个单词。
 
-  ![Topics](img/topics.png)
+  ![Topics](https://hyhwky.com/2020/06/25/topics.png)
 
 # Exchange的四种类型
 
@@ -56,15 +56,15 @@
 
 **direct**：**完全匹配、单播模式**。消息中的**路由键（routing key）如果和 Binding 中的 binding key 一致**， 交换器就将消息发到对应的队列中。
 
-![direct](img/direct.png)
+![direct](https://hyhwky.com/2020/06/25/direct.png)
 
 **fanout**：每个发到 fanout 类型交换器的消息都会分到所有绑定的队列上去。**fanout 交换器不处理路由键，只是简单的将队列绑定到交换器上**，每个发送到交换器的消息都会被转发到与该交换器绑定的所有队列上。很像子网广播，每台子网内的主机都获得了一份复制的消息。fanout 类型转发消息是最快的。
 
-![fanout](img/fanout.png)
+![fanout](https://hyhwky.com/2020/06/25/fanout.png)
 
 **topic**：**topic 交换器通过模式匹配分配消息的路由键属性**，将路由键和某个模式进行匹配，此时队列需要绑定到一个模式上。它将路由键和绑定键的字符串切分成单词，这些单词之间用点隔开。它同样也会识别两个通配符：符号`#`和符号`*`。`#`匹配0个或多个单词，`*`匹配一个单词。
 
-![topic](img/topic.png)
+![topic](https://hyhwky.com/2020/06/25/topic.png)
 
 **headers**：匹配AMPQ消息的header而不是路由键，headers交换器和direct交换器完全一致，但性能差很多，几乎不用。
 
@@ -88,33 +88,33 @@ firewall-cmd --reload # 使修改生效
 
 **RabbitMQ的web管理界面**
 
-![RabbitMQ的web界面](img/333.png)
+![RabbitMQ的web界面](https://hyhwky.com/2020/06/25/333.png)
 
 **创建帐号并设置其角色为管理员：smday**
 
-![创建帐号并设置其角色为管理员](img/admin.png)
+![创建帐号并设置其角色为管理员](https://hyhwky.com/2020/06/25/admin.png)
 
 **设置Virtual Hosts**
 
-![设置Virtual Hosts](img/host.png)
+![设置Virtual Hosts](https://hyhwky.com/2020/06/25/host.png)
 
 
 
 **给创建的用户设置虚拟Host权限**
 
-![设置虚拟Host权限](img/per.png)
+![设置虚拟Host权限](https://hyhwky.com/2020/06/25/per.png)
 
 **Exchange的添加操作及参数介绍**
 
-![Exchange的添加操作及参数介绍](img/exchange.png)
+![Exchange的添加操作及参数介绍](https://hyhwky.com/2020/06/25/exchange.png)
 
 结构化参数其实就是一个Map，key是指定字符串，比如这里的Alternate-exchange，如果exchange1指定了`Alternate-exchange`的值为exchange2，那么如果消息无法匹配exchange1绑定的queue1，它会尝试通过exchange2路由到exchange2绑定的queue2。
 
-![](img/alternate.png)
+![](https://hyhwky.com/2020/06/25/alternate.png)
 
 **Queue的添加操作及参数介绍**
 
-![queue](img/queue.png)
+![queue](https://hyhwky.com/2020/06/25/queue.png)
 
 大致差不多，可以看看它的一些结构化参数：
 
@@ -244,7 +244,7 @@ public void bind(){
 }
 ```
 
-![](img/amqp.png)
+![](https://hyhwky.com/2020/06/25/amqp.png)
 
 # 参考链接
 

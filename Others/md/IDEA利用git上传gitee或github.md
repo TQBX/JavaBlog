@@ -14,19 +14,19 @@
 
 选择自己的想要上传的项目
 
-![项目于](E:\1myblog\JavaBlog\JavaBlog\Others\pic\项目于.png)
+![项目于](..\pic\项目于.png)
 
 
 
-![add5](E:\1myblog\JavaBlog\JavaBlog\Others\pic\add5.png)
+![add5](..\pic\add5.png)
 
-![cimmit](E:\1myblog\JavaBlog\JavaBlog\Others\pic\cimmit.png)
+![cimmit](..\pic\cimmit.png)
 
-![osuh](E:\1myblog\JavaBlog\JavaBlog\Others\pic\osuh.png)
+![osuh](..\pic\osuh.png)
 
-![remote](E:\1myblog\JavaBlog\JavaBlog\Others\pic\remote.png)
+![remote](..\pic\remote.png)
 
-![clone](E:\1myblog\JavaBlog\JavaBlog\Others\pic\clone.png)
+![clone](..\pic\clone.png)
 
 即可。
 
